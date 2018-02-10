@@ -1,0 +1,7 @@
+AppW=738
+AppH=504
+AppX=341
+AppY=89
+FileDetails=true
+File=null
+FancyJson=true
