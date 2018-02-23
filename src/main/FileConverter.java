@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 
 import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
@@ -41,6 +42,13 @@ public class FileConverter {
 		JSONObject animation = (JSONObject) json.get("animation");
 		Long frametime = (Long) animation.get("frametime");
 		JSONArray arr = (JSONArray) animation.get("frames");
+		if(arr == null)
+		{
+			String name = FileConverter.getFileDisplayName(f);
+			if(!name.endsWith(".png"))
+				name += ".png";//if is in vanilla format of name.png.mceta then this ignore this if statement if is general file then do this function
+			arr = getXboxFrames(new File(f.getParentFile(),name),frametime == null ? 0 : frametime );
+		}
 		Boolean interpolate = (Boolean) animation.get("interpolate");
 		int ftime = 0;
 		if(frametime != null)
@@ -81,7 +89,26 @@ public class FileConverter {
 	  } catch (Exception e){App.printErr(e);}
 	  
 	}
-	
+
+	public static JSONArray getXboxFrames(File file,long frametime) {
+		try{
+			if(frametime == 0)
+				return new JSONArray();
+			
+			BufferedImage img = ImageIO.read(file);
+			Integer res = Integer.parseInt(JOptionPane.showInputDialog("Enter Texture Pack Res"));
+			int count = img.getHeight()/res;
+			JSONArray frames = new JSONArray();
+			for(int i=0;i<count;i++)
+			{
+				if(frametime != 0)
+					frames.add((long)i);//make it output frames if frametime != 0
+			}
+			return frames;
+		}catch(Exception e){App.printErr(e);}
+		return null;
+	}
+
 	/**
 	 * Converts xbox animation file .txt > .mcmeta
 	 */
@@ -424,6 +451,12 @@ public class FileConverter {
 		}
 		return list;
 	}
+	public static BufferedImage resizeImage(BufferedImage init,int w, int h)
+	{
+		BufferedImage img = new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB );
+		App.placeImage(img,init,0,0);
+		return img;
+	}
 	public static void resizeImage(File f,int w,int h)
 	{
 		try{
@@ -436,22 +469,27 @@ public class FileConverter {
 	/**
 	 * Used for entities like beds and shulkers from xbox to pc. x,y is start then specify sub img height and the color to recolor grey img and then specify which img needs the color overlay
 	 */
-	public static void splitAndColorImage(File dirimg, int x1, int y1, int imgW, int imgH, int x2, int y2, int imgW2, int imgH2,String filename,Color color)
+	public static BufferedImage splitAndColorImage(File dirimg, int x1, int y1, int imgW, int imgH, int x2, int y2, int imgW2, int imgH2,String filename,Color color,boolean write)
 	{
 		try{
 		BufferedImage init = ImageIO.read(dirimg);
 		BufferedImage grey = FileConverter.copyImage(init.getSubimage(x1, y1, imgW, imgH));
 		BufferedImage overlay = FileConverter.copyImage(init.getSubimage(x2, y2, imgW2, imgH2));
-		colorAndOverlayImg(dirimg.getParentFile(),filename,grey,overlay,color);
+		colorAndOverlayImg(dirimg.getParentFile(),filename,grey,overlay,color,write);
+		return grey;
 		}catch(Exception e){e.printStackTrace();}
+		return null;
 	}
-	public static void colorAndOverlayImg(File dir,String filename,BufferedImage grey, BufferedImage overlay, Color color) {
+	public static void colorAndOverlayImg(File dir,String filename,BufferedImage grey, BufferedImage overlay, Color color,boolean write) {
 		try{
 		File f2 = new File(dir,filename);
-		f2.createNewFile();
 		FileConverter.colorGreyImage(grey,color);
 		FileConverter.overlayImage(grey,overlay,false);
-		ImageIO.write(grey, "png", f2);
+		if(write)
+		{
+			f2.createNewFile();
+			ImageIO.write(grey, "png", f2);
+		}
 		}catch(Exception e){e.printStackTrace();}
 	}
 
@@ -478,9 +516,9 @@ public class FileConverter {
         int colorMultiplier = c.getRGB();
         int width = image.getWidth();
         int height = image.getHeight();
-        float redMultiplier = (float)(colorMultiplier >> 16 & 255) / 255.0F;
-        float greenMultiplier = (float)(colorMultiplier >> 8 & 255) / 255.0F;
-        float blueMultiplier = (float)(colorMultiplier & 255) / 255.0F;
+        float redMultiplier = (float)((colorMultiplier >> 16 & 255) / 255.0F);
+        float greenMultiplier = (float)((colorMultiplier >> 8 & 255) / 255.0F);
+        float blueMultiplier = (float)((colorMultiplier & 255) / 255.0F);
 
         for (int x = 0; x < width; ++x)
         {
@@ -493,17 +531,17 @@ public class FileConverter {
                     continue;//skip transparent pixels
 
                 // Converts color to separate RGB components
-                float red = (float)(int_color >> 16 & 255);
-                float green = (float)(int_color >> 8 & 255);
-                float blue = (float)(int_color & 255);
+                float red = (float) ( (int_color >> 16 & 255)/ 255.0F);
+                float green = (float)((int_color >> 8 & 255)/ 255.0F);
+                float blue = (float)((int_color & 255)/ 255.0F);
 
                 // Calculate new color
-                int r = (int)(red * redMultiplier);
-                int g = (int)(green * greenMultiplier);
-                int b = (int)(blue * blueMultiplier);
-                int_color = r << 16 | g << 8 | b;
-                Color pixel = new Color(int_color,true);
-                pixel = new Color(pixel.getRed(),pixel.getGreen(),pixel.getBlue(),tst.getAlpha());//makes it set the right alpha
+                float r = (red *= redMultiplier);
+                float g = (green *= greenMultiplier);
+                float b = (blue *= blueMultiplier);
+                
+                Color pixel = new Color(r,g,b);
+                pixel = new Color(pixel.getRed(),pixel.getGreen(),pixel.getBlue(),tst.getAlpha());//supports transparency color changes for advanced cool looking resource packs
                 // Set pixel to new color value
                 image.setRGB(x, y, pixel.getRGB());
             }
@@ -579,11 +617,7 @@ public class FileConverter {
 		rgbArray = img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth());
 		return rgbArray;
 	}
-	public static void splitTerrain(int res,int colums,File dir,File terrain,File output,CSVE csve,boolean to_xbox)
-	{
-		splitTerrain(res,colums,dir,terrain,output,csve,null,to_xbox);
-	}
-	public static void splitTerrain(int res,int colums,File dir,File terrain,File output,CSVE csve,File filecolors,boolean to_xbox)
+	public static void splitTerrain(int res,int colums,File dir,File terrain,File output,CSVE csve,File filecolors,boolean to_xbox,boolean item,boolean fancyjson)
 	{
 		try{
 		BufferedImage img = ImageIO.read(terrain);
@@ -591,7 +625,10 @@ public class FileConverter {
 		FileConverter.splitImage(terrain, colums,rows, output,csve);
 		if(filecolors == null)
 			return;
-		doShulkerBoxes(dir,filecolors,output);
+		if(item)
+			App.convertItemBeds(dir,fancyjson);
+		else
+			doShulkerBoxes(dir,filecolors,output);
 		}catch(Exception e){e.printStackTrace();}
 	}
 	

@@ -21,13 +21,28 @@ import com.google.gson.JsonParser;
 
 public class MainJava {
 	public static App app;
-	public static final int build = 9;
+	public static final int build = 18;
 	public static final String version = "Build " + build;
 	public static final File dir = new File(System.getProperty("user.dir"));
 	
 	@SuppressWarnings({ "unused", "unchecked" })
 	public static void main(String[] args)
 	{
+		/*
+		try{
+		BufferedImage tst = new BufferedImage(255,255,BufferedImage.TYPE_INT_ARGB);
+		for(int x=0;x<tst.getWidth();x++)
+		{
+			for(int y=0;y<tst.getHeight();y++)
+				tst.setRGB(x, y, Color.decode("#FFFFFF").getRGB());
+		}
+//		FileConverter.colorGreyImage(tst, Color.decode("#FCC724"));
+		File dir = new File("C:/Users/jredfox/Desktop/color_test.png");
+		dir.createNewFile();
+		ImageIO.write(tst, "png", dir);
+		}catch(Exception e){e.printStackTrace();}
+		if(true)
+			return;*/
 		app = new App();
 		System.out.println("App Starting");
 	}
@@ -42,7 +57,8 @@ public class MainJava {
 		      for (int x = 0; x < width; x++) {
 		        // Compare the pixels for equality.
 		    	  Color c = new Color(imgA.getRGB(x, y),true);
-		        if (imgA.getRGB(x, y) != imgB.getRGB(x, y) && c.getAlpha() != 0) {
+		    	  Color c2 = new Color(imgB.getRGB(x, y),true);
+		        if (imgA.getRGB(x, y) != imgB.getRGB(x, y) && !(c.getAlpha() == 0 && c2.getAlpha() == 0) ) {
 		        	System.out.println("x:" + x + " y:" + y + " C:" + c);
 		          return false;
 		        }
@@ -62,7 +78,7 @@ public class MainJava {
 	        if (file.isFile() && !files.contains(file) && file.getName().endsWith(extension)) {
 	            files.add(file);
 	        } else if (file.isDirectory()) {
-	        	getAllFilesFromDir(file, files);
+	        	getAllFilesFromDir(file, files,extension);
 	        }
 	    }
 	}
