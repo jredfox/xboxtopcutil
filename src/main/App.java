@@ -59,6 +59,11 @@ public class App extends AppCfg{
 	public JMenu renamers;
 	public JMenu spliters;
 	public JMenu unspliters;
+	public JMenu menu_entities;
+	public JMenu menu_shulker;
+	public JMenu menu_zombie;
+	public JMenu menu_bed;
+	
 	//renamers
 	public JMenuItem renameBlocksToPc;
 	public JMenuItem renameItemsToPc;
@@ -166,6 +171,10 @@ public class App extends AppCfg{
 		//Debug
 		spliters = new JMenu("Splitters");
 		unspliters = new JMenu("UnSplitters");
+		menu_entities = new JMenu("Entities");
+		menu_shulker = new JMenu("Shulkers");
+		menu_bed = new JMenu("Beds");
+		menu_zombie = new JMenu("Zombies");
 		
 		renameBlocksToPc = new JMenuItem("Rename Blocks > Pc");
 		renameItemsToPc = new JMenuItem("Rename Items > Pc");
@@ -327,9 +336,128 @@ public class App extends AppCfg{
 			BufferedImage img = new BufferedImage(64,64,BufferedImage.TYPE_INT_ARGB);
 			moveImg(bed, 22, 22, 16, 6, 22, 0);//move thing up some
 			moveImg(bed,0,28,44,16,0,22);//move bed up
+			
+			//alter legs back to xbox
+			BufferedImage legset = FileConverter.copyImage(bed.getSubimage(50, 0, 12, 24));
+			deletePixles(bed, 50, 0, 12,24);
+			for(int i=0;i<4;i++)
+			{
+				BufferedImage leg = null;
+				int ybed = i * 6;
+				leg = legset.getSubimage(0, ybed, 12, 6);
+				BufferedImage[] images = new BufferedImage[8];
+				String type = getXboxLegIndex(i);
+				
+				//split images to their xbox index
+				images[getXNorth(i)] = getLegXNorth(leg,type);
+				images[getXSouth(i)] = getLegXSouth(leg,type);
+				images[getXEast(i)] = getLegXEast(leg,type);
+				images[getXWest(i)] = getLegXWest(leg,type);
+				images[getXTop()] = getLegXTop(leg);
+				images[getXBottom()] = getLegXBottom(leg);
+
+				BufferedImage newlegset = bed.getSubimage(0, 38, 24,12);
+				BufferedImage newleg = null;
+				if(type.equals("topleft"))
+					newleg = newlegset.getSubimage(0, 0, 12,6);
+				if(type.equals("topright"))
+					newleg = newlegset.getSubimage(12, 0, 12,6);
+				if(type.equals("bottomleft"))
+					newleg = newlegset.getSubimage(0, 6, 12,6);
+				if(type.equals("bottomright"))
+					newleg = newlegset.getSubimage(12, 6, 12,6);
+				
+				//place the legs to the new legset
+				int y = 0;
+				int index = 0;
+				for(int j=0;j<2;j++)
+				{
+					for(int k=0;k<4;k++)
+					{
+						if(images[index] != null)
+							placeImage(newleg, images[index], k*3, y*3);
+						index++;
+					}
+					y++;
+				}
+				
+//				break;
+			}
+			
 			placeImage(img,bed,0,0);
 			ImageIO.write(img, "png", new File(dir,"bed_test.png"));
 		}catch(Exception e){App.printErr(e);}
+	}
+	public int getXTop(){return 5;}
+	public int getXBottom(){return 7;}
+	public BufferedImage getLegXTop(BufferedImage img){return img.getSubimage(3*1, 0, 3, 3);}
+	public BufferedImage getLegXBottom(BufferedImage img){return img.getSubimage(3*2, 0, 3, 3);}
+	
+	public int getXEast(int i)
+	{
+		String s = getXboxLegIndex(i);
+		if(s.equals("topleft") || s.equals("bottomleft"))
+			return 6;
+		if(s.equals("topright") || s.equals("bottomright"))
+			return 4;
+		return -1;
+	}
+	public int getXWest(int i)
+	{
+		String s = getXboxLegIndex(i);
+		if(s.equals("topleft") || s.equals("bottomleft"))
+			return 4;
+		if(s.equals("topright") || s.equals("bottomright"))
+			return 6;
+		return -1;
+	}
+	public int getXSouth(int i)
+	{
+		String s = getXboxLegIndex(i);
+		if(s.equals("topleft") || s.equals("topright"))
+			return 2;
+		if(s.equals("bottomleft") || s.equals("bottomright"))
+			return 1;
+		return -1;
+	}
+	private int getXNorth(int i) {
+		String s = getXboxLegIndex(i);
+		if(s.equals("topleft") || s.equals("topright"))
+			return 1;
+		if(s.equals("bottomleft") || s.equals("bottomright"))
+			return 2;
+		return -1;
+	}
+	public BufferedImage getLegXNorth(BufferedImage leg, String type) {
+		if(type.equals("bottomleft") || type.equals("topright"))
+			return leg.getSubimage(3*1, 3*1, 3,3);
+		if(type.equals("topleft") || type.equals("bottomright"))
+			return leg.getSubimage(3*0, 3*1, 3, 3);
+		return null;
+	}
+	public BufferedImage getLegXSouth(BufferedImage leg, String type) {
+		if(type.equals("bottomleft") || type.equals("topright"))
+			return leg.getSubimage(3*3, 3*1, 3,3);
+		if(type.equals("bottomright") || type.equals("topleft"))
+			return leg.getSubimage(3*2, 3*1, 3, 3);
+		
+		return null;
+	}
+	public BufferedImage getLegXWest(BufferedImage leg, String type) {
+		if(type.equals("bottomleft") || type.equals("topright"))
+			return leg.getSubimage(3*0, 3*1, 3,3);
+		if(type.equals("bottomright") || type.equals("topleft"))
+			return leg.getSubimage(3*1, 3*1, 3, 3);
+		
+		return null;
+	}
+	public BufferedImage getLegXEast(BufferedImage leg, String type) {
+		if(type.equals("bottomleft") || type.equals("topright"))
+			return leg.getSubimage(3*2, 3*1, 3,3);
+		if(type.equals("bottomright") || type.equals("topleft"))
+			return leg.getSubimage(3*3, 3*1, 3, 3);
+		
+		return null;
 	}
 	public void convertZombieToOld(File dir) {
 		try{
@@ -1031,6 +1159,11 @@ public class App extends AppCfg{
 		debug.add(renamers);
 		debug.add(spliters);
 		debug.add(unspliters);
+		debug.add(menu_entities);
+		menu_entities.add(menu_shulker);
+		menu_entities.add(menu_zombie);
+		menu_entities.add(menu_bed);
+		
 		renamers.add(renameBlocksToPc);
 		renamers.add(renameItemsToPc);
 		renamers.add(renameCompass);
@@ -1042,20 +1175,23 @@ public class App extends AppCfg{
 		spliters.add(splitCompass);
 		spliters.add(splitClock);
 		spliters.add(splitBanners);
+		
 		unspliters.add(unsplitBlocks);
 		unspliters.add(unsplitItems);
 		unspliters.add(unsplitCompass);
 		unspliters.add(unsplitClock);
 		unspliters.add(unsplitBanners);
-		debug.add(shulkers);
-		debug.add(shulkertoxbox);
-		debug.add(beds);
-		debug.add(bedItem);
-		debug.add(bed_win10);
-		debug.add(zombie);
-		debug.add(zombie_villager);
-		debug.add(zombieToOld);
-		debug.add(boxes);
+		
+		menu_shulker.add(shulkers);
+		menu_shulker.add(shulkertoxbox);
+		menu_shulker.add(boxes);
+		menu_bed.add(beds);
+		menu_bed.add(bedItem);
+		menu_bed.add(bed_win10);
+		menu_zombie.add(zombie);
+		menu_zombie.add(zombie_villager);
+		menu_zombie.add(zombieToOld);
+		
 		debug.add(bedtoXbox);
 		
 		//Convert
