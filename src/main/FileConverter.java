@@ -82,7 +82,7 @@ public class FileConverter {
 			if(fancy)
 				str += "\r\n";
 		}
-		File file = new File(f.getParentFile(),FileConverter.getFileDisplayName(f) + ".txt");
+		File file = new File(f.getParentFile(),FileConverter.getFileTrueDisplayName(f) + ".txt");
 		file.createNewFile();
 		ArrayList<String> list = new ArrayList<String>();
 		list.add(str);
@@ -193,7 +193,7 @@ public class FileConverter {
 		}
 		if(!frames.isEmpty() && !hasNoFrames(frames,new File(f.getParent(),FileConverter.getFileDisplayName(f) + ".png")) )
 			animation.put("frames", frames);
-		File file = new File(f.getParentFile(),FileConverter.getFileDisplayName(f) + ".mcmeta");
+		File file = new File(f.getParentFile(),FileConverter.getFileTrueDisplayName(f) + ".png.mcmeta");
 		if(!file.exists())
 			file.createNewFile();
 		List<String> listjson = new ArrayList<String>();

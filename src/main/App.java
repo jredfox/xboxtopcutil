@@ -87,6 +87,7 @@ public class App extends AppCfg{
 	public JMenuItem shulkertoxbox;
 	public JMenuItem bedItem;
 	public JMenuItem zombieToOld;
+	public JMenuItem bedtoXbox;
 
 	
 	//Mapping files
@@ -193,6 +194,7 @@ public class App extends AppCfg{
 		boxes = new JMenuItem("boxes");
 		bedItem = new JMenuItem("ItemBed > Pc");
 		zombieToOld = new JMenuItem("Zombie Villager > 1.8");
+		bedtoXbox = new JMenuItem("Bed > Xbox(from pc)");
 		
 		setLocations();
 		addItems();
@@ -245,6 +247,7 @@ public class App extends AppCfg{
 		shulkertoxbox.addActionListener(new FileRenamer() );
 		bedItem.addActionListener(new FileRenamer() );
 		zombieToOld.addActionListener(new FileRenamer() );
+		bedtoXbox.addActionListener(new FileRenamer() );
 		
 		//Options
 		toggle_fancyJson.addActionListener(new BasicHandler());
@@ -305,6 +308,8 @@ public class App extends AppCfg{
 				convertItemBeds(new File(ff[0],"items"),App.this.FancyJson);
 			if(e.getSource() == bed_win10)
 				convertBeds(ff[0],new File(ff[0],"entities/bed.png"),true);
+			if(e.getSource() == bedtoXbox)
+				convertBedToXbox(new File(ff[0],"entities"));
 			if(e.getSource() == zombie)
 				FileConverter.resizeImage(new File(ff[0],"entities/zombie.png"),64,64);
 			if(e.getSource() == zombie_villager)
@@ -315,6 +320,16 @@ public class App extends AppCfg{
 				FileConverter.doShulkerBoxes(new File(ff[0],"blocks"), new File(ff[0],"colors.txt"), new File(ff[0],"blocks"));
 			}catch(Exception ee){ee.printStackTrace();}
 		}
+	}
+	public void convertBedToXbox(File dir) {
+		try{
+			BufferedImage bed = ImageIO.read(new File(dir,"bed.png"));
+			BufferedImage img = new BufferedImage(64,64,BufferedImage.TYPE_INT_ARGB);
+			moveImg(bed, 22, 22, 16, 6, 22, 0);//move thing up some
+			moveImg(bed,0,28,44,16,0,22);//move bed up
+			placeImage(img,bed,0,0);
+			ImageIO.write(img, "png", new File(dir,"bed_test.png"));
+		}catch(Exception e){App.printErr(e);}
 	}
 	public void convertZombieToOld(File dir) {
 		try{
@@ -348,7 +363,6 @@ public class App extends AppCfg{
 		placeImage(zmb,rside,28,20);
 		placeImage(zmb,neck,20,16);
 		placeImage(zmb,but,28,16);
-//		ImageIO.write(but, "png" ,new File(dir,"but.png") );
 		
 		ImageIO.write(zmb,"png",new File(dir,"zombie_villager1.8.png"));
 		}catch(Exception e){App.printErr(e);}
@@ -1042,6 +1056,7 @@ public class App extends AppCfg{
 		debug.add(zombie_villager);
 		debug.add(zombieToOld);
 		debug.add(boxes);
+		debug.add(bedtoXbox);
 		
 		//Convert
 		convert.add(coltotxt);
