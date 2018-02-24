@@ -54,11 +54,13 @@ public class FileConverter {
 		if(frametime != null)
 			ftime = (int)((long)frametime);
 		
-		String str = "ANIM=";
+		String str = "";
 		if(interpolate != null && interpolate == true)
+		{
 			str += "#";
-		if(fancy)
-			str += "\r\n";
+		  if(fancy)
+			  str += "\r\n";
+		}
 		
 		for(int i=0;i<arr.size();i++)
 		{
@@ -85,25 +87,28 @@ public class FileConverter {
 		ArrayList<String> list = new ArrayList<String>();
 		list.add(str);
 		Files.write(file.toPath(),list);
-		System.out.print(str + "\n");
 	  } catch (Exception e){App.printErr(e);}
 	  
 	}
-
+	/**
+	 * use only if initial frames:[] is null
+	 */
 	public static JSONArray getXboxFrames(File file,long frametime) {
 		try{
 			if(frametime == 0)
 				return new JSONArray();
+			if(!file.exists())
+			{
+				file = new File(file.getParent(),FileConverter.getFileTrueDisplayName(file) + ".png" );
+				if(!file.exists())
+					return null;
+			}
 			
 			BufferedImage img = ImageIO.read(file);
-			Integer res = Integer.parseInt(JOptionPane.showInputDialog("Enter Texture Pack Res"));
-			int count = img.getHeight()/res;
+			int count = img.getHeight()/img.getWidth();
 			JSONArray frames = new JSONArray();
 			for(int i=0;i<count;i++)
-			{
-				if(frametime != 0)
 					frames.add((long)i);//make it output frames if frametime != 0
-			}
 			return frames;
 		}catch(Exception e){App.printErr(e);}
 		return null;
@@ -153,8 +158,13 @@ public class FileConverter {
 				}
 			}
 			else{
-				String[] part2 = value.split("\\*");
-				entries.add(new Point(Integer.parseInt(part2[0]), Integer.parseInt(part2[1]) ) );
+				if(value.contains("*"))
+				{
+					String[] part2 = value.split("\\*");
+					entries.add(new Point(Integer.parseInt(part2[0]), Integer.parseInt(part2[1]) ) );
+				}
+				else
+					entries.add(new Point(Integer.parseInt(FileConverter.toWhiteSpaced(value)),0 ));//if line is = to int and doesn't contain stars parse it
 			}
 		}
 		frametime = getFrameTime(entries);
@@ -181,7 +191,7 @@ public class FileConverter {
 				frames.add(cf);
 			}
 		}
-		if(!frames.isEmpty())
+		if(!frames.isEmpty() && !hasNoFrames(frames,new File(f.getParent(),FileConverter.getFileDisplayName(f) + ".png")) )
 			animation.put("frames", frames);
 		File file = new File(f.getParentFile(),FileConverter.getFileDisplayName(f) + ".mcmeta");
 		if(!file.exists())
@@ -191,7 +201,47 @@ public class FileConverter {
 		Files.write(file.toPath(), listjson);
 		}catch(Exception e){App.printErr(e);}
 	}
-	
+	/**
+	 * States if frames are in order from 0-last index optimize and fix corrupted pc by not having frames
+	 * @Scans only already converted json array
+	 */
+	public static boolean hasNoFrames(JSONArray frames, File file) {
+		try{
+			if(!file.exists())
+			{
+				file = new File(file.getParent(),FileConverter.getFileTrueDisplayName(file) + ".png" );
+				if(!file.exists())
+					return false;
+			}
+			BufferedImage img = ImageIO.read(file);
+			
+			int res = img.getWidth();
+			int framecount = img.getHeight()/res;
+			if(frames.size() != framecount)
+				return false;//hotfix
+			for(int i=0;i<framecount;i++)
+			{
+				Object obj = frames.get(i);
+				if(obj instanceof Long || obj instanceof Integer)
+				{
+					if(i != (Integer)obj)
+						return false;//frame out of line
+				}
+				else
+					return false;//if has custom frametime cannot be empty
+			}
+		}catch(Throwable e){return false;}
+		return true;
+	}
+	/**
+	 * returns name from first index till it disovers a dot
+	 * @param file
+	 * @return
+	 */
+	private static String getFileTrueDisplayName(File file) {
+		return file.getName().split("\\.")[0];
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static int getFrameTime(List<Point> list)
 	{
@@ -217,7 +267,7 @@ public class FileConverter {
 			if(point > p.y)
 				p = new Point(time,point);
 		}
-		System.out.println(p);
+//		System.out.println(p);
 		return p.x;
 	}
 	@SuppressWarnings("rawtypes")

@@ -108,7 +108,7 @@ public class AppCfg extends JFrame{
 		}catch(Exception e){App.printErr(e);}
 		return options;
 	}
-	public static void printErr(Exception e) 
+	public static void printErr(Throwable e) 
 	{
 		 StringBuilder sb = new StringBuilder(e.toString());
 		    for (StackTraceElement ste : e.getStackTrace()) {
