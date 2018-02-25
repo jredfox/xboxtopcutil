@@ -92,6 +92,7 @@ public class App extends AppCfg{
 	public JMenuItem shulkertoxbox;
 	public JMenuItem bedItem;
 	public JMenuItem zombieToOld;
+	public JMenuItem bedtoWin10;
 	public JMenuItem bedtoXbox;
 
 	
@@ -203,6 +204,7 @@ public class App extends AppCfg{
 		boxes = new JMenuItem("boxes");
 		bedItem = new JMenuItem("ItemBed > Pc");
 		zombieToOld = new JMenuItem("Zombie Villager > 1.8");
+		bedtoWin10 = new JMenuItem("Bed > Win 10(from Pc)");
 		bedtoXbox = new JMenuItem("Bed > Xbox(from pc)");
 		
 		setLocations();
@@ -256,6 +258,7 @@ public class App extends AppCfg{
 		shulkertoxbox.addActionListener(new FileRenamer() );
 		bedItem.addActionListener(new FileRenamer() );
 		zombieToOld.addActionListener(new FileRenamer() );
+		bedtoWin10.addActionListener(new FileRenamer() );
 		bedtoXbox.addActionListener(new FileRenamer() );
 		
 		//Options
@@ -317,6 +320,8 @@ public class App extends AppCfg{
 				convertItemBeds(new File(ff[0],"items"),App.this.FancyJson);
 			if(e.getSource() == bed_win10)
 				convertBeds(ff[0],new File(ff[0],"entities/bed.png"),true);
+			if(e.getSource() == bedtoWin10)
+				convertBedToWin10(new File(ff[0],"entities"),true);
 			if(e.getSource() == bedtoXbox)
 				convertBedToXbox(new File(ff[0],"entities"));
 			if(e.getSource() == zombie)
@@ -330,7 +335,19 @@ public class App extends AppCfg{
 			}catch(Exception ee){ee.printStackTrace();}
 		}
 	}
-	public void convertBedToXbox(File dir) {
+	public void convertBedToXbox(File dir)
+	{
+		BufferedImage bed = convertBedToWin10(dir,false);
+		BufferedImage img = new BufferedImage(64,128,BufferedImage.TYPE_INT_ARGB);
+
+		placeImage(img,bed,0,0);
+		placeImage(img,bed,0,64);
+		try {
+			ImageIO.write(img, "png", new File(dir,"bed_test.png") );
+		} catch (IOException e) {e.printStackTrace();}
+		App.printMsg("Bed Formatted Sucesffully but, Requires Manual Work.\nDelete whatever you don't want colored from the first 64x64");
+	}
+	public BufferedImage convertBedToWin10(File dir,boolean write) {
 		try{
 			BufferedImage bed = ImageIO.read(new File(dir,"bed.png"));
 			BufferedImage img = new BufferedImage(64,64,BufferedImage.TYPE_INT_ARGB);
@@ -353,8 +370,12 @@ public class App extends AppCfg{
 				images[getXSouth(i)] = getLegXSouth(leg,type);
 				images[getXEast(i)] = getLegXEast(leg,type);
 				images[getXWest(i)] = getLegXWest(leg,type);
-				images[getXTop()] = getLegXTop(leg);
-				images[getXBottom()] = getLegXBottom(leg);
+				images[getXTop()] = getLegXTop(leg,type);
+				images[getXBottom()] = getLegXBottom(leg,type);
+				
+				for(int j=0;j<images.length;j++)
+					if(j != getXTop() && j != getXBottom() )
+						images[j] = rotateToXLeg(images[j], j);
 
 				BufferedImage newlegset = bed.getSubimage(0, 38, 24,12);
 				BufferedImage newleg = null;
@@ -380,18 +401,39 @@ public class App extends AppCfg{
 					}
 					y++;
 				}
-				
 //				break;
 			}
 			
 			placeImage(img,bed,0,0);
-			ImageIO.write(img, "png", new File(dir,"bed_test.png"));
+			if(write)
+				ImageIO.write(img, "png", new File(dir,"bed_test.png"));
+			return img;
 		}catch(Exception e){App.printErr(e);}
+		return null;
 	}
 	public int getXTop(){return 5;}
 	public int getXBottom(){return 7;}
-	public BufferedImage getLegXTop(BufferedImage img){return img.getSubimage(3*1, 0, 3, 3);}
-	public BufferedImage getLegXBottom(BufferedImage img){return img.getSubimage(3*2, 0, 3, 3);}
+	
+	public BufferedImage getLegXTop(BufferedImage img,String type){return roateXTopAndBottom(img.getSubimage(3*1, 0, 3, 3),type);}
+	
+	public BufferedImage getLegXBottom(BufferedImage img,String type){
+		BufferedImage bottom = img.getSubimage(3*2, 0, 3, 3);
+		return mirorHorizontal(roateXTopAndBottom(bottom,type));
+	}
+	
+	public BufferedImage roateXTopAndBottom(BufferedImage img, String type) {
+		//do nothing for bottom left since rotation is accurate
+		if(type.equals("topleft")){
+			img = rotate90(img);
+		}
+		if(type.equals("bottomright")){
+			img = rotate90Counter(img);
+		}
+		if(type.equals("topright")){
+			img = rotate180(img);
+		}
+		return img;
+	}
 	
 	public int getXEast(int i)
 	{
@@ -458,6 +500,17 @@ public class App extends AppCfg{
 			return leg.getSubimage(3*3, 3*1, 3, 3);
 		
 		return null;
+	}
+	public BufferedImage rotateToXLeg(BufferedImage img,int i) {
+		if(i == 1)
+			img = rotate180(img);
+		if(i == 2)
+			img = mirorVerticle(img);
+		if(i == 4)
+			img = rotate90(img);
+		if(i == 6)
+			img = rotate90Counter(img);
+		return img;
 	}
 	public void convertZombieToOld(File dir) {
 		try{
@@ -1192,6 +1245,7 @@ public class App extends AppCfg{
 		menu_zombie.add(zombie_villager);
 		menu_zombie.add(zombieToOld);
 		
+		menu_bed.add(bedtoWin10);
 		debug.add(bedtoXbox);
 		
 		//Convert

@@ -21,7 +21,7 @@ import com.google.gson.JsonParser;
 
 public class MainJava {
 	public static App app;
-	public static final int build = 22;
+	public static final int build = 23;
 	public static final String version = "Build " + build;
 	public static final File dir = new File(System.getProperty("user.dir"));
 	
